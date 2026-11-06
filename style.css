@@ -1,0 +1,21 @@
+:root { color-scheme: light dark; font: 15px/1.5 system-ui,sans-serif; --border: light-dark(#d5d8df,#404653); --muted: light-dark(#555e6b,#b2bbc8); --panel: light-dark(#f5f7fa,#232730); }
+* { box-sizing: border-box; }
+body { margin: 0 auto; padding: 20px; max-width: 1080px; }
+body.popup { width: 390px; max-width:100%; padding: 16px; }
+body { overflow-wrap:anywhere; }
+header > *,nav > *,section { min-width:0; }
+h1 { font-size: 1.4rem; margin: 0; } h2 { font-size: 1.15rem; }
+header,nav,.actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:16px; }
+header { justify-content:space-between; }
+a { color:light-dark(#1454a6,#92beff); overflow-wrap:anywhere; }
+button,input,select,textarea { font:inherit; border:1px solid var(--border); border-radius:6px; padding:7px 10px; max-width:100%; }
+button { cursor:pointer; } button:disabled { cursor:wait; opacity:.6; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,pre:focus-visible { outline:3px solid #568def; outline-offset:2px; }
+label { display:block; margin:10px 0; } label input:not([type=checkbox]),label select { display:block; width: min(100%,480px); }
+section,.task,.academic-card { padding:16px; background:var(--panel); border:1px solid var(--border); border-radius:8px; margin:14px 0; }
+.task h3 { margin:0 0 4px; } .muted { color:var(--muted); }
+output { display:block; padding:8px 0; overflow-wrap:anywhere; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:500px; overflow:auto; }
+textarea { display:block; width:100%; min-height:70px; } .danger { border-color:#d66; }
+small { color:var(--muted); } [hidden] { display:none !important; }
+@media(max-width:450px) { body {padding:10px;} }

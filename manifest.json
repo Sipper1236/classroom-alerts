@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Classroom Assignment Alerts",
+  "version": "0.8.0",
+  "description": "Send reminders for assignments visible in Google Classroom.",
+  "permissions": ["storage", "tabs", "alarms", "clipboardWrite", "https://classroom.google.com/*", "https://discord.com/api/webhooks/*"],
+  "browser_specific_settings": {"gecko": {"id": "classroom-alerts@local.invalid", "strict_min_version": "115.0"}},
+  "options_ui": {"page": "dashboard.html", "open_in_tab": true},
+  "browser_action": {
+    "default_title": "Classroom alerts",
+    "default_popup": "popup.html"
+  },
+  "background": { "scripts": ["build.js", "core.js", "notifications.js", "state.js", "background.js"] },
+  "content_scripts": [{
+    "matches": ["https://classroom.google.com/*"],
+    "js": ["build.js", "core.js", "extractor.js", "content.js"],
+    "run_at": "document_idle"
+  }]
+}

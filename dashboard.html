@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Classroom Alerts dashboard</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h1>Classroom Alerts <small id="version"></small></h1><div><button id="refresh">Refresh view</button> <button id="scan">Scan selected courses</button> <button id="pause">Pause scan</button> <button id="resume">Resume remaining</button> <button id="retry-scan">Retry failed courses</button> <button id="cancel">Cancel scan</button></div></header>
+<nav aria-label="Dashboard sections"><a href="#work">Work queue</a><a href="#academic">Academic snapshots</a><a href="#courses">Courses</a><a href="#settings">Settings</a><a href="#diagnostics">Diagnostics</a></nav>
+<output id="status" aria-live="polite"></output><p id="coverage" role="status"></p>
+<section id="script-versions" hidden><h2>Reload Classroom tabs</h2><p id="build-status"></p><p>After updating or reloading the extension, reload every open Classroom tab so its page scripts update too. Old or mixed scripts are blocked before their data is accepted. Then scan again.</p><div id="version-tabs"></div></section>
+<section id="recovery" hidden><h2>Data recovery — automation blocked</h2><p id="recovery-status"></p><p>The original stored data has not been replaced. Export validated records before resetting. Recovery of supported schemas keeps a local backup of the original (including saved secrets); recovered snapshots require Classroom verification and delivery is disabled. Unsupported newer schemas cannot be recovered by this version.</p><button id="recover">Recover validated records</button></section>
+<section id="work"><h2>What should I work on?</h2><p>Recommendations use deadlines and visible status, not AI. Local progress does not submit work to Classroom.</p>
+<label>Filter by title or course <input id="filter" type="search"></label>
+<label>Course filter<select id="task-course"><option value="">All selected courses</option></select></label>
+<label>Deadline filter<select id="task-deadline"><option value="all">All deadlines</option><option value="overdue">Overdue (confirmed time)</option><option value="missing">Missing in Classroom</option><option value="upcoming">Upcoming (confirmed time)</option><option value="no-date">No due date</option><option value="uncertain">Date/time needs review</option></select></label>
+<label>Review-state filter<select id="task-review"><option value="all">All review states</option><option value="review">Needs verification</option><option value="verified">Detail verified, no known conflict</option></select></label>
+<label><input id="today-only" type="checkbox"> Only today's pinned plan (school timezone)</label>
+<label>Your time budget in minutes (unestimated tasks remain visible)<input id="budget" type="number" min="1" max="1440" placeholder="Optional"></label><label><input id="show-completed" type="checkbox"> Include submitted / locally complete tasks (to review or restore local progress)</label><div id="tasks"></div><p><button id="page-prev">Previous tasks</button> <span id="page-count"></span> <button id="page-next">Next tasks</button></p></section>
+<section id="provisional"><h2>Provisional summaries — verify in Classroom</h2><p>Visible assignment cards without stable item links are local, unverified observations, not identified tasks. They never enter recommendations or Discord. Identical titles are not merged or matched to assignments. Open the checked course scope and verify details manually. This bounded inventory keeps at most 200 summaries; a fresh scan replaces that page's snapshot, not your identified task records. JSON backups include these snapshots; task CSV does not.</p><div id="provisional-items"></div><p><button id="provisional-prev">Previous provisional summaries</button> <span id="provisional-count"></span> <button id="provisional-next">Next provisional summaries</button></p><button id="clear-provisional" class="danger">Clear provisional snapshots</button></section>
+<section id="academic"><h2>Academic snapshots — local only</h2><p>Announcements, materials and grades require the separate collection switches in Settings. Only supported visible UI regions are collected; an empty list is not proof that there are no posts or grades. Grades are individual snapshots, never an official course average. No announcement bodies, instructions, files or grades are forwarded to Discord.</p>
+<label>Academic view<select id="academic-type"><option value="announcement">Announcements</option><option value="material">Materials</option><option value="grade">Visible grade snapshots</option></select></label>
+<label>Filter academic snapshots<input id="academic-filter" type="search"></label><div id="academic-items"></div><p><button id="academic-prev">Previous snapshots</button> <span id="academic-count"></span> <button id="academic-next">Next snapshots</button></p></section>
+<section id="courses"><h2>Selected courses and coverage</h2><p>Save your account settings, then open Classroom and use “Collect current Classroom page” to discover courses. Select courses below and save settings before a full scan.</p><button id="page">Collect current Classroom page</button><div id="course-list"></div></section>
+<section id="settings"><h2>Settings</h2><form id="settings-form">
+<label>Local account profile label <input id="profile" required maxlength="80" placeholder="School"></label>
+<label>Classroom account number (from /u/1/ in your URL) <input id="account" required type="number" min="0" max="99"></label>
+<p class="muted">Confirm this is the right account. Account numbers can change when accounts are reordered. Reset local data before switching profiles.</p>
+<label>School timezone <input id="timezone" required placeholder="America/Halifax"></label>
+<label>Scan interval, minutes (Zen must be open) <input id="interval" type="number" min="15" max="1440" required></label>
+<label>Daily digest hour, 0–23 <input id="digest" type="number" min="0" max="23" required></label>
+<fieldset><legend>Discord notification events</legend>
+<label><input id="digestEnabled" type="checkbox"> Daily unfinished-work digest</label>
+<label><input id="remindersEnabled" type="checkbox"> Due-soon reminders (recently verified tasks only)</label>
+<label>Reminder windows in hours, separated by commas (blank means none; up to 8, from 0.25 to 720)<input id="reminder-hours" placeholder="24, 3"></label>
+<label><input id="notifyNew" type="checkbox"> Newly discovered assignments, after each course's first successful baseline scan</label>
+<label><input id="notifyDeadline" type="checkbox"> Confirmed deadline changes (detail evidence only)</label>
+<label><input id="notifyHealth" type="checkbox"> Stale scan-health warnings (counts only; at most one per school day)</label>
+<label>Warn after this many hours without a successful scoped check (1–168)<input id="health-hours" type="number" min="1" max="168" required></label>
+<label>Minimum spacing between automatic messages, minutes (0–1440; test messages exempt)<input id="notification-gap" type="number" min="0" max="1440" required></label>
+<p>First synchronization does not send one new-item alert per historical task. Re-enabling an event does not replay past changes. After a scheduling gap of at least 30 minutes, multiple eligible missed alerts are combined into one bounded current-state catch-up. Quiet hours, rate limits and spacing still apply. Stale reminder windows are discarded, not replayed; overflow is summarized with a Dashboard notice rather than more messages. Partially delivered digests retain their existing cursor. Pending events expire after 48 hours.</p>
+</fieldset>
+<label>Quiet hours start, 0–23 <input id="quiet-start" type="number" min="0" max="23" required></label>
+<label>Quiet hours end, 0–23 (same as start disables quiet hours) <input id="quiet-end" type="number" min="0" max="23" required></label>
+<label>Discord webhook URL <input id="webhook" type="password" autocomplete="off" placeholder="Leave blank to disable; saved secrets are not displayed"></label>
+<button id="reveal-webhook" type="button" aria-pressed="false" aria-controls="webhook">Show entered webhook</button><p>Only a newly entered replacement can be revealed; the saved secret is never loaded into this page.</p>
+<label><input id="discord-enabled" type="checkbox"> Enable Discord delivery (changing/disabling the destination clears pending messages)</label>
+<p>Messages share assignment titles, course names, deadlines, status and links with Discord and channel members. Use a private channel and school-approved sharing. No grades, private comments, or diagnostics are sent. Keys are stored locally, not in an encrypted vault.</p>
+<label><input id="announcements" type="checkbox"> Include visible announcement links locally (layout-dependent)</label>
+<label><input id="materials" type="checkbox"> Include visible material/Drive links locally (no downloads)</label>
+<label><input id="grades" type="checkbox"> Include visible grades locally only (disabling clears grade snapshots/history)</label>
+<label><input id="verbose" type="checkbox"> Verbose local diagnostics for one hour (may contain private school text; expires across restarts and clears the report)</label>
+<button type="submit">Save settings and course selection</button></form>
+<p><button id="preview-discord">Preview Discord messages locally</button> <button id="test-discord">Send Discord test (no school data)</button> <button id="retry-delivery">Retry queued messages</button></p><p id="delivery"></p>
+<details id="message-preview" hidden><summary>Exact message text preview</summary><p>Uses saved settings and current records. The digest sample is shown even when delivery is disabled or not due. Queued events are shown only while still valid; later data changes may change the text. Nothing is sent or queued by this preview. Discord Markdown is shown as text; mentions are disabled in the outbound payload.</p><pre id="preview-text"></pre></details></section>
+<section id="diagnostics"><h2>Diagnostics and activity</h2><p>Normal reports contain counts and reasons. Verbose reports may contain school text. Review and redact before sharing. Secrets are never included in this view.</p>
+<button id="copy">Copy diagnostic summary</button> <button id="clear-diagnostics">Clear diagnostics</button><div id="copy-fallback" hidden><label>Redacted summary for manual copying<textarea id="copy-text" readonly></textarea></label></div><pre id="report" tabindex="0" aria-label="Local diagnostic report"></pre><h3>Recent activity</h3><pre id="activity" tabindex="0" aria-label="Recent local activity"></pre></section>
+<section id="data"><h2>Local data, backup and retention</h2>
+<p>Exports contain private tasks, local notes and any locally collected grades/materials, but no settings, webhook, queues or diagnostics. Keep files private. Imports never enable delivery or change settings, and require a fresh Classroom detail check before alerts.</p>
+<button id="export">Export task JSON (no secrets)</button> <button id="export-csv">Export task CSV (no secrets)</button>
+<label>Import a task JSON export (maximum 2 MiB)<input id="import-file" type="file" accept=".json,application/json"></label>
+<label>Conflict policy<select id="import-policy"><option value="keep">Keep existing records (recommended)</option><option value="replace">Replace Classroom snapshot; preserve existing local notes/progress</option></select></label>
+<button id="import-preview">Preview import</button> <button id="import-apply" disabled>Confirm previewed import</button><output id="import-status"></output>
+<form id="retention-form"><h3>Retention policy</h3>
+<label>Delete completed tasks after this many days (0 keeps all; 0–3650)<input id="completed-retention" type="number" min="0" max="3650" required></label>
+<label>Expire diagnostic reports after this many hours (1–720)<input id="diagnostic-retention" type="number" min="1" max="720" required></label>
+<label>Keep activity history this many days (1–365)<input id="history-retention" type="number" min="1" max="365" required></label>
+<p>Automatic cleanup runs at most hourly while the extension is active. Only detail-verified submissions or locally complete tasks with a recorded completion date are eligible; unfinished work and unverified imports are kept regardless of age. Setting completed retention to 0 disables automatic task deletion. Deletion resets affected course baselines to avoid rediscovery alert floods; a later scan may rediscover a deleted task.</p>
+<button type="submit">Save retention policy</button></form>
+<p><button id="cleanup-preview">Preview cleanup</button> <button id="cleanup-apply" disabled>Confirm previewed cleanup</button></p><output id="cleanup-status"></output>
+<p><button id="clear-history" class="danger">Clear all task history</button> <button id="delete-recovery-backup" class="danger">Delete local recovery backup</button> <button id="reset" class="danger">Reset all local data</button></p>
+<p>Clearing task history retains course selection, notification preferences, and the saved webhook. Reset removes those too. Neither changes Classroom. A local recovery backup is retained until explicitly deleted with its separate button.</p></section>
+<script src="build.js"></script><script src="core.js"></script><script src="dashboard.js"></script></body></html>
